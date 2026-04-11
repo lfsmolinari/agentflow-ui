@@ -15,6 +15,7 @@ This project exists to give Copilot CLI users a desktop experience similar in sp
 
 - **Language**: TypeScript
 - **Framework**: Electron + React
+- **Styling**: Tailwind CSS with CSS variables for design tokens, plus Radix primitives for accessible headless UI components
 - **Database**: N/A currently visible in the repository
 - **Infrastructure**: Copilot CLI as the backend runtime, with a desktop shell around local CLI execution and a local Codex-style workspace scaffold with agent definitions in TOML under `.codex/agents/`
 - **Testing**: [NEEDS CLARIFICATION: What automated testing layers and quality gates should be required for the Electron application?]
@@ -26,13 +27,21 @@ This project exists to give Copilot CLI users a desktop experience similar in sp
 3. **Extensible by Design**: The app should be structured so that new agents such as Orchestrator and Architect can be added without redesigning the core interaction model.
 4. **Workspace-Centered Sessions**: A workspace maps to a folder or project, and the application should organize chat sessions around that folder context, including retrieval of prior sessions for the selected workspace.
 5. **Copilot CLI as Source of Truth**: The desktop app should rely on Copilot CLI for authentication and session continuity where possible, instead of inventing a separate backend or duplicating core session behavior in phase 1.
+6. **Token-Driven UI System**: Visual consistency should be enforced through a small design-token system implemented with CSS variables so that light and dark themes can evolve without rewriting component styles.
 
 ## Coding Standards
 
-- **Style**: TypeScript-first across renderer, preload, and main process. Enforce ESLint and Prettier from the start. Prefer strict compiler settings, explicit types at module boundaries, and small focused modules over framework-heavy abstractions.
+- **Style**: TypeScript-first across renderer, preload, and main process. Enforce ESLint and Prettier from the start. Prefer strict compiler settings, explicit types at module boundaries, and small focused modules over framework-heavy abstractions. Use Tailwind CSS for component styling, CSS variables for design tokens, and Radix primitives for accessible headless UI elements where needed.
 - **Naming**: React components use `PascalCase`; hooks use `camelCase` with a `use` prefix; utility and service modules use project-standard file naming such as `kebab-case`; IPC channels and application commands should be named by intent, such as `listSessions`, `startSession`, and `checkCopilotInstalled`.
 - **Error handling**: Renderer code must not call Copilot CLI or filesystem APIs directly. Risky operations must go through typed application or infrastructure boundaries. User-facing failures should surface as actionable UI states, while technical details are logged in the desktop layer. Errors should be explicit, recoverable where possible, and never silently swallowed.
 - **Comments**: Prefer self-explanatory code and clear naming. Add comments only where intent, lifecycle, process orchestration, or security-sensitive behavior would otherwise be hard to infer. Public modules that bridge Electron, IPC, or Copilot CLI should document purpose and boundary assumptions.
+
+## Design Standards
+
+- **Theme support**: The UI should support both dark mode and light mode through the same token system, even if dark mode is the primary visual target during phase 1 refinement.
+- **Token system**: Define a small shared token set for color, typography, spacing, radius, border treatment, shadow, and focus states using CSS variables.
+- **Component philosophy**: Prefer custom product styling over heavy pre-themed component frameworks. Radix-style primitives may provide behavior and accessibility, but product identity should come from the token system and local styling.
+- **Visual consistency**: Sidebar hierarchy, chat transcript, composer, buttons, overlays, and empty states should all derive from the same token decisions rather than ad hoc per-screen styling.
 
 ## Testing Standards
 

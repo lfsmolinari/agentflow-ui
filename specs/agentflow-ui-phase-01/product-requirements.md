@@ -39,6 +39,7 @@ This epic exists to make agent collaboration more natural and accessible for Cop
 - A first desktop UI experience oriented around chat with the Strategist agent for Product Owner workflows
 - A visible agent selector that shows additional agents but keeps them unavailable and not selectable in phase 1
 - An Electron-based desktop shell using Copilot CLI as the backend runtime
+- A frontend styling approach based on Tailwind CSS, CSS-variable-driven design tokens, and Radix primitives for accessible interactive controls
 - A Codex-Desktop-inspired layout with workspace navigation, prior session retrieval per workspace folder, new chat/session entry points, and a central chat interface
 - Support for Copilot-style chat affordances such as referencing file paths from the chat experience
 - A splash or entry experience that presents application branding and:
@@ -64,7 +65,7 @@ This epic exists to make agent collaboration more natural and accessible for Cop
 - [ ] What exact chat affordances from Copilot CLI and VS Code Copilot Chat are required in phase 1 beyond file-path inclusion?
 - [ ] How should the UI identify and retrieve prior Copilot CLI sessions for a selected folder or workspace?
 - [ ] What local metadata, if any, should the desktop app persist to make workspace and session discovery feel fast and reliable?
-- [ ] Which parts of the Codex Desktop experience are essential to preserve in layout and interaction, and which should intentionally differ for Product Owner workflows?
+- [ ] Which parts of the design-token system must be established before implementation begins, and which can evolve during phase 1?
 
 ## Success Criteria
 

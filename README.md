@@ -22,6 +22,8 @@ The current product definition lives in:
 - [specs/constitution.md](specs/constitution.md)
 - [specs/agentflow-ui-phase-01/product-requirements.md](specs/agentflow-ui-phase-01/product-requirements.md)
 - [specs/agentflow-ui-phase-01/user-stories/README.md](specs/agentflow-ui-phase-01/user-stories/README.md)
+- [specs/agentflow-ui-phase-01/UX-Stories/README.md](specs/agentflow-ui-phase-01/UX-Stories/README.md)
+- [specs/agentflow-ui-phase-01/ui-spec.md](specs/agentflow-ui-phase-01/ui-spec.md)
 
 ## Real Example (Dogfooding This Project)
 
@@ -33,12 +35,18 @@ This UI is being built using the Agentic Engineering Workflow itself.
 - Generated `product-requirements.md`
 - Derived user stories
 
-### Phase 2 — Technical Design (Architect)
+### Phase 2 — UX Design (Designer)
+
+- Generated UX stories
+- Produced `ui-spec.md` from product requirements, UX stories, and visual references
+- Defined layout, screen states, interaction behavior, and design-token expectations
+
+### Phase 3 — Technical Design (Architect)
 
 - Spec generation for milestone 1
 - Plan and task breakdown
 
-### Phase 3 — Implementation (Coder)
+### Phase 4 — Implementation (Coder)
 
 - Implementing first user stories
 
@@ -48,6 +56,8 @@ Artifacts:
 
 - See product requirement: [specs/agentflow-ui-phase-01/product-requirements.md](specs/agentflow-ui-phase-01/product-requirements.md)
 - See user stories: [specs/agentflow-ui-phase-01/user-stories/README.md](specs/agentflow-ui-phase-01/user-stories/README.md)
+- See UX stories: [specs/agentflow-ui-phase-01/UX-Stories/README.md](specs/agentflow-ui-phase-01/UX-Stories/README.md)
+- See UI spec: [specs/agentflow-ui-phase-01/ui-spec.md](specs/agentflow-ui-phase-01/ui-spec.md)
 - See spec: not generated yet
 
 ## Planned Stack
@@ -55,6 +65,9 @@ Artifacts:
 - Electron
 - React
 - TypeScript
+- Tailwind CSS
+- CSS variables for design tokens
+- Radix primitives
 - Copilot CLI as the backend runtime
 
 ## MVP Summary
@@ -64,6 +77,14 @@ Artifacts:
 - Strategist is the only enabled agent in phase 1
 - Other agents may be visible but disabled
 - Session continuity should come from Copilot CLI rather than a separate app-owned backend
+- The UI should support both dark and light mode through a shared design-token system
+
+## Agent Workflow Notes
+
+- `Strategist` defines product direction, writes the product requirements, and helps derive user stories
+- `Designer` translates product and UX stories into UI/UX handoff artifacts such as `ui-spec.md`
+- `Architect` turns the approved product and design artifacts into `spec.md`, `plan.md`, and `tasks.md`
+- `Coder` implements against those approved artifacts
 
 ## Status
 
