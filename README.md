@@ -19,9 +19,36 @@ Phase 1 is focused on a Strategist-first workflow for Product Owners:
 
 The current product definition lives in:
 
-- [specs/constitution.md](/Users/lmolinari/Developer/agentflow-ui/specs/constitution.md)
-- [specs/agentflow-ui-phase-01/product-requirements.md](/Users/lmolinari/Developer/agentflow-ui/specs/agentflow-ui-phase-01/product-requirements.md)
-- [specs/agentflow-ui-phase-01/user-stories/README.md](/Users/lmolinari/Developer/agentflow-ui/specs/agentflow-ui-phase-01/user-stories/README.md)
+- [specs/constitution.md](specs/constitution.md)
+- [specs/agentflow-ui-phase-01/product-requirements.md](specs/agentflow-ui-phase-01/product-requirements.md)
+- [specs/agentflow-ui-phase-01/user-stories/README.md](specs/agentflow-ui-phase-01/user-stories/README.md)
+
+## Real Example (Dogfooding This Project)
+
+This UI is being built using the Agentic Engineering Workflow itself.
+
+### Phase 1 — Product (Strategist)
+
+- Idea defined through Strategist
+- Generated `product-requirements.md`
+- Derived user stories
+
+### Phase 2 — Technical Design (Architect)
+
+- Spec generation for milestone 1
+- Plan and task breakdown
+
+### Phase 3 — Implementation (Coder)
+
+- Implementing first user stories
+
+This repository serves as a real-world validation of the workflow.
+
+Artifacts:
+
+- See product requirement: [specs/agentflow-ui-phase-01/product-requirements.md](specs/agentflow-ui-phase-01/product-requirements.md)
+- See user stories: [specs/agentflow-ui-phase-01/user-stories/README.md](specs/agentflow-ui-phase-01/user-stories/README.md)
+- See spec: not generated yet
 
 ## Planned Stack
 
@@ -48,6 +75,6 @@ This project is source-available for learning and collaboration.
 
 Commercial use is restricted.
 
-It is licensed under PolyForm Noncommercial 1.0.0. See [LICENSE](/Users/lmolinari/Developer/agentflow-ui/LICENSE).
+It is licensed under PolyForm Noncommercial 1.0.0. See [LICENSE](LICENSE).
 
 If you're interested in using this in a commercial context, please reach out.
