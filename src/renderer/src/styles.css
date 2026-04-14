@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", "SF Pro Text", "Segoe UI", sans-serif;
+
+  --color-bg: 244 245 247;
+  --color-panel: 255 255 255;
+  --color-panel-elevated: 248 249 251;
+  --color-border: 219 223 231;
+  --color-text: 24 28 35;
+  --color-text-secondary: 71 80 95;
+  --color-text-muted: 115 123 139;
+  --color-accent: 42 110 241;
+  --color-accent-foreground: 255 255 255;
+  --color-danger: 194 63 63;
+  --color-ring: 42 110 241;
+
+  --radius-control: 12px;
+  --radius-panel: 20px;
+  --radius-modal: 18px;
+  --radius-composer: 18px;
+
+  --shadow-shell: 0 22px 80px rgba(18, 25, 38, 0.12);
+  --shadow-modal: 0 20px 65px rgba(18, 25, 38, 0.18);
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+}
+
+[data-theme='dark'] {
+  --color-bg: 17 18 22;
+  --color-panel: 26 28 34;
+  --color-panel-elevated: 31 34 41;
+  --color-border: 56 61 72;
+  --color-text: 245 246 249;
+  --color-text-secondary: 185 191 204;
+  --color-text-muted: 132 138 150;
+  --color-accent: 77 132 255;
+  --color-accent-foreground: 255 255 255;
+  --color-danger: 239 97 97;
+  --color-ring: 77 132 255;
+
+  --shadow-shell: 0 24px 90px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 22px 70px rgba(0, 0, 0, 0.4);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-text antialiased;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.focus-ring {
+  @apply outline-none ring-2 ring-transparent transition-shadow duration-fast;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgb(var(--color-ring) / 0.35);
+}

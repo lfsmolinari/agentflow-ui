@@ -1,0 +1,74 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        // Allow everything by default
+        "*": true,
+        // Block destructive file operations (cross-platform)
+        "rm": false,
+        "rmdir": false,
+        "del": false,
+        "erase": false,
+        "rd": false,
+        "/^rm\s+-rf/": false,
+        // Block PowerShell destructive commands
+        "Remove-Item": false,
+        "Remove-ItemProperty": false,
+        "/^Remove-/": false,
+        "Clear-Content": false,
+        "Clear-Item": false,
+        "/^Format-/": false,
+        // Block dangerous git operations
+        "/^git\s+(clean|reset\s+--hard|push\s+--force)/": false,
+        // Block system modifications (Linux/Mac)
+        "sudo": false,
+        "chmod": false,
+        "chown": false,
+        "kill": false,
+        "killall": false,
+        // Block system modifications (Windows)
+        "Stop-Process": false,
+        "Stop-Computer": false,
+        "Restart-Computer": false,
+        "Set-ExecutionPolicy": false,
+        "takeown": false,
+        "icacls": false,
+        "cacls": false,
+        "attrib": false,
+        // Block package uninstalls/removals
+"/^npm\s+(uninstall|un\b)/": false,
+"/^pip\s+uninstall/": false,
+"/^cargo\s+clean/": false,
+"/^brew\s+uninstall/": false,
+        "Uninstall-Package": false,
+        "Uninstall-Module": false,
+"/^choco\s+uninstall/": false,
+"/^winget\s+uninstall/": false,
+        // Block network downloads (prompt injection risk)
+        "curl": false,
+        "wget": false,
+        "Invoke-WebRequest": false,
+        "Invoke-RestMethod": false,
+        "iwr": false,
+        "irm": false,
+        // Block code execution risks (PowerShell)
+        "Invoke-Expression": false,
+        "iex": false,
+"/^&\s+/": false,
+        // Block registry modifications (Windows)
+"/^reg\s+(delete|add)/": false,
+        "Remove-ItemProperty": false,
+        // Block network configuration (Windows)
+"/^netsh\s/": false,
+        // Block WMI operations (Windows)
+"/^wmic\s/": false,
+        // Block Docker destructive operations
+"/^docker\s+(rm|rmi|system\s+prune)/": false,
+"/^docker-compose\s+down/": false,
+        // Block format/partition operations
+        "mkfs": false,
+        "fdisk": false,
+        "parted": false,
+        "diskpart": false,
+        "Format-Volume": false,
+        "Clear-Disk": false
+    }
+}

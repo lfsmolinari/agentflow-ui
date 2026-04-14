@@ -58,7 +58,9 @@ Artifacts:
 - See user stories: [specs/agentflow-ui-phase-01/user-stories/README.md](specs/agentflow-ui-phase-01/user-stories/README.md)
 - See UX stories: [specs/agentflow-ui-phase-01/UX-Stories/README.md](specs/agentflow-ui-phase-01/UX-Stories/README.md)
 - See UI spec: [specs/agentflow-ui-phase-01/ui-spec.md](specs/agentflow-ui-phase-01/ui-spec.md)
-- See spec: not generated yet
+- See Milestone 1 spec: [specs/agentflow-ui-phase-01/Milestone 1/spec.md](specs/agentflow-ui-phase-01/Milestone%201/spec.md)
+- See Milestone 1 plan: [specs/agentflow-ui-phase-01/Milestone 1/plan.md](specs/agentflow-ui-phase-01/Milestone%201/plan.md)
+- See Milestone 1 tasks: [specs/agentflow-ui-phase-01/Milestone 1/tasks.md](specs/agentflow-ui-phase-01/Milestone%201/tasks.md)
 
 ## Planned Stack
 
