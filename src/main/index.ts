@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { IPC_CHANNELS } from '@shared/ipc';
@@ -17,6 +17,7 @@ const createWindow = async (): Promise<void> => {
     minWidth: 1024,
     minHeight: 700,
     backgroundColor: '#111216',
+    icon: join(__dirname, '../renderer/AgentFlowUI-favicon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -34,6 +35,7 @@ const createWindow = async (): Promise<void> => {
 };
 
 app.whenReady().then(async () => {
+  Menu.setApplicationMenu(null);
   ipcMain.handle(IPC_CHANNELS.getStartupState, () => startupService.getStartupState());
   ipcMain.handle(IPC_CHANNELS.refreshAuthState, () => startupService.refreshAuthState());
   ipcMain.handle(IPC_CHANNELS.openInstallDocs, async () => {
