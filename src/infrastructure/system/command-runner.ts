@@ -13,26 +13,11 @@ export interface CommandRunner {
 export const createCommandRunner = (): CommandRunner => ({
   run(command, args = [], timeoutMs = 15_000, onData?) {
     return new Promise((resolve, reject) => {
-      const {
-        PATH, HOME, USERPROFILE, APPDATA,
-        TMPDIR, TEMP, TMP,
-        SHELL, USER, LOGNAME,
-        LANG, LC_ALL, LC_CTYPE,
-        XDG_CONFIG_HOME, XDG_CACHE_HOME, XDG_DATA_HOME,
-      } = process.env;
-
-      const env = Object.fromEntries(
-        Object.entries({
-          PATH, HOME, USERPROFILE, APPDATA,
-          TMPDIR, TEMP, TMP,
-          SHELL, USER, LOGNAME,
-          LANG, LC_ALL, LC_CTYPE,
-          XDG_CONFIG_HOME, XDG_CACHE_HOME, XDG_DATA_HOME,
-        }).filter(([, v]) => v !== undefined)
-      ) as NodeJS.ProcessEnv;
+      const env = { ...process.env };
 
       const child = spawn(command, args, {
         env,
+        shell: process.platform === 'win32',
         stdio: ['ignore', 'pipe', 'pipe']
       });
 

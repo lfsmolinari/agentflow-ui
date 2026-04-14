@@ -209,4 +209,12 @@ describe('CopilotCliAdapter', () => {
 
     expect(spy).toHaveBeenCalledWith('code-chunk');
   });
+
+  it('isInstalled returns false when the runner throws', async () => {
+    const runner: CommandRunner = {
+      run: async () => { throw new Error('spawn ENOENT'); }
+    };
+    const adapter = new CopilotCliAdapter(runner);
+    await expect(adapter.isInstalled()).resolves.toBe(false);
+  });
 });

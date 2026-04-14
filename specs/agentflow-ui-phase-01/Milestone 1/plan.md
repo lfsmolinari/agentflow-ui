@@ -243,6 +243,10 @@ Exit criteria:
 - Milestone 1 acceptance stories can be demonstrated manually.
 - Automated test coverage exists for the highest-risk application and integration boundaries.
 
+## Application Menu Convention
+
+The default Electron menu (File | Edit | View | Window | Help) must be suppressed in all environments. Call `Menu.setApplicationMenu(null)` before the `BrowserWindow` is created. AgentFlow UI is a single-purpose shell — the default items are browser scaffolding that have no product meaning here and contradict the custom-chrome intent already expressed by `titleBarStyle: hiddenInset` on macOS. DevTools access in development should be provided through a conditional `webContents.openDevTools()` call or keyboard shortcut, not through the production menu. A minimal macOS-specific app menu (Quit, About) can be added in a future milestone if needed.
+
 ## Dependency Notes
 
 Key decisions or confirmations needed before or during implementation:

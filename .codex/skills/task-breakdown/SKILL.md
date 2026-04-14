@@ -49,6 +49,8 @@ Each task should include:
 **Acceptance**: [How to verify this task is complete]
 ```
 
+**E2E requirement**: If a task produces a user-visible behavior change (screen state, heading, flow), its acceptance criteria must include an E2E test passing. Example: "`npm run test:e2e` passes with a test that asserts [expected heading/state]."
+
 ## Task Quality Checklist
 
 - [ ] Every task is actionable — a coder can start without asking questions
@@ -59,6 +61,7 @@ Each task should include:
 - [ ] No task mixes unrelated concerns (e.g., UI + database in one task)
 - [ ] Infrastructure/setup tasks come before feature tasks
 - [ ] Test tasks are included, not assumed
+- [ ] For tasks with user-visible behavior changes: E2E test(s) are included and listed in the acceptance criteria
 
 ## Output
 
