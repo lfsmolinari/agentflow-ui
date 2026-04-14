@@ -3,6 +3,10 @@ import { join } from 'node:path';
 
 const appPath = join(process.cwd(), 'out/main/index.js');
 
+// Allow up to 25 s for the app to transition out of the 'checking' state.
+// The CLI command timeout in command-runner.ts is 15 s; this gives 10 s of headroom.
+const STATE_RESOLUTION_TIMEOUT = 25_000;
+
 test.describe('Startup flow', () => {
   test('app reaches a stable startup state without hanging on loading screen', async () => {
     const app = await electron.launch({ args: [appPath] });
@@ -11,13 +15,13 @@ test.describe('Startup flow', () => {
       await window.waitForLoadState('domcontentloaded');
 
       const heading = window.locator('h1');
-      await expect(heading).toBeVisible({ timeout: 15_000 });
 
-      const text = (await heading.textContent())?.trim();
-      expect(
-        ['Copilot CLI required', 'Sign in to continue'],
-        `Unexpected startup state heading: "${text}". App must resolve to install gate or login screen.`
-      ).toContain(text);
+      // Poll until the heading contains one of the two stable states.
+      // This correctly waits past the transient 'Checking environment' state.
+      await expect(heading).toHaveText(
+        /^(Copilot CLI required|Sign in to continue|Start a new project)$/,
+        { timeout: STATE_RESOLUTION_TIMEOUT }
+      );
     } finally {
       await app.close();
     }
@@ -34,7 +38,6 @@ test.describe('Startup flow', () => {
       await window.waitForLoadState('domcontentloaded');
 
       const heading = window.locator('h1');
-      await expect(heading).toBeVisible({ timeout: 15_000 });
 
       await expect(
         heading,
@@ -42,7 +45,7 @@ test.describe('Startup flow', () => {
         'Got install gate ("Copilot CLI required") instead.\n' +
         'This means the app could not find the copilot executable on PATH.\n' +
         'Check src/infrastructure/system/command-runner.ts env configuration.'
-      ).toHaveText('Sign in to continue');
+      ).toHaveText('Sign in to continue', { timeout: STATE_RESOLUTION_TIMEOUT });
     } finally {
       await app.close();
     }

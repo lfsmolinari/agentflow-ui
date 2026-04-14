@@ -27,4 +27,4 @@ This project uses **Spec-Driven Development (SDD)** with an agent pipeline. The 
 
 ## Validation
 
-Before marking any task complete, invoke the `task-validation` skill. It will direct you to the validation suite defined in `specs/constitution.md` under **Testing Standards → Validation Suite**. Do not call `task_complete` if any required step fails.
+Before marking any task complete, invoke the `task-validation` skill. It will direct you to the validation suite defined in `specs/constitution.md` under **Testing Standards → Validation Suite**. Do not call `task_complete` if any required step fails. **Tasks that produce user-visible behavior changes must include E2E test coverage; `npm run test:e2e` must pass.**

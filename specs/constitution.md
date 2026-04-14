@@ -18,7 +18,7 @@ This project exists to give Copilot CLI users a desktop experience similar in sp
 - **Styling**: Tailwind CSS with CSS variables for design tokens, plus Radix primitives for accessible headless UI components
 - **Database**: N/A currently visible in the repository
 - **Infrastructure**: Copilot CLI as the backend runtime, with a desktop shell around local CLI execution and a local Codex-style workspace scaffold with agent definitions in TOML under `.codex/agents/`
-- **Testing**: [NEEDS CLARIFICATION: What automated testing layers and quality gates should be required for the Electron application?]
+- **Testing**: Three layers are required — unit and integration tests (Vitest), end-to-end desktop tests (Playwright `_electron`), and all layers must pass before any task is marked complete.
 
 ## Architecture Principles
 
@@ -47,7 +47,7 @@ This project exists to give Copilot CLI users a desktop experience similar in sp
 
 - **Required coverage**: No blanket percentage gate for phase 1. Instead, automated tests are required for session routing, workspace discovery, install and login state handling, and Copilot CLI adapter behavior that affects user flows.
 - **Test types**: Unit tests for pure application logic and parsing or mapping functions; integration tests for IPC handlers, Copilot CLI adapter behavior, and workspace or session resolution; a small set of end-to-end desktop tests for critical user journeys.
-- **Test approach**: Favor behavior testing at application and integration boundaries over snapshot-heavy UI testing. Mock Copilot CLI execution in most tests, use controlled fixtures for workspace and session discovery, and reserve end-to-end tests for only the most critical desktop-shell flows. For phase 1, session retrieval per folder and GitHub Enterprise login require integration coverage and manual validation, but not dedicated end-to-end coverage.
+- **Test approach**: Favor behavior testing at application and integration boundaries over snapshot-heavy UI testing. Mock Copilot CLI execution in most tests and use controlled fixtures for workspace and session discovery. End-to-end coverage is required for every task that produces a user-visible behavior change — every such task must include an E2E test and that test must pass before the task is marked done.
 
 ### Validation Suite
 
@@ -59,7 +59,7 @@ The project validation suite runs in this order. All steps must pass before a ta
 | Lint | `npm run lint` | Always |
 | Unit / integration tests | `npm test` | Always |
 | Build | `npm run build` | When config, build paths, aliases, or bundling are changed |
-| End-to-end tests | `npm run test:e2e` | When the change affects startup-state resolution, CLI detection, the install gate, or the login screen |
+| End-to-end tests | `npm run test:e2e` | Always — every task that produces a user-visible behavior change must include E2E coverage and pass before the task is marked complete |
 
 ### End-to-End Test Details
 
@@ -68,9 +68,14 @@ The project validation suite runs in this order. All steps must pass before a ta
 - **How it works**: `npm run test:e2e` builds the app first (`npm run build`), then launches the compiled Electron binary as a real desktop window via Playwright
 - **Do not use `npm run dev` for validation** — it opens an interactive window and never exits
 
-#### E2E trigger conditions
+#### E2E coverage requirements
 
-Run `npm run test:e2e` when your change touches any of:
+Run `npm run test:e2e` for any change that produces a user-visible behavior change. This includes:
+- Any change that affects a screen state, heading, or user-visible text
+- Any change to the startup flow, auth flow, install gate, or login screen
+- Any new user-visible feature or state added to the app
+
+The following files are known triggers (not exhaustive):
 - `src/infrastructure/system/command-runner.ts`
 - `src/infrastructure/copilot/adapter.ts`
 - `src/main/startup-service.ts`

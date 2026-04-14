@@ -24,7 +24,7 @@ The general sequence is:
 2. **Lint** — static analysis; must exit 0 with no errors (warnings are acceptable)
 3. **Unit / integration tests** — run the full test suite once; all tests must pass
 4. **Build** (conditional) — run if your change touches configuration, build paths, aliases, or bundling
-5. **End-to-end tests** (conditional) — run if your change affects a flow covered by the project's e2e suite; see the constitution for which flows require this
+5. **End-to-end tests** — required for any task that produces a user-visible behavior change. Every such task must include E2E coverage. Run `npm run test:e2e`. See `specs/constitution.md` Testing Standards for the E2E requirements and failure interpretation.
 
 ## Pre-Completion Checklist
 
@@ -35,7 +35,7 @@ Before calling `task_complete`, confirm:
 - [ ] All unit/integration tests pass
 - [ ] No new unhandled errors or silent failure paths introduced without intent
 - [ ] If build-related changes were made, build also exits 0
-- [ ] If the change affects a flow listed in the constitution's e2e trigger conditions, e2e tests pass
+- [ ] If the task produces any user-visible behavior change: E2E test(s) exist for it, `npm run test:e2e` passes
 
 ## Handling Failures
 
