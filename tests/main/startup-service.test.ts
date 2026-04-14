@@ -69,6 +69,7 @@ describe('StartupService.getStartupState()', () => {
     const state = await service.getStartupState();
 
     expect(state.kind).toBe('error');
+    expect(state.description).toBe('Unexpected probe failure.');
   });
 });
 
@@ -146,6 +147,90 @@ describe('StartupService.loginWithGitHub()', () => {
     expect(result.state.description).toBe(
       'Authentication failed. Please try again or run the Copilot CLI directly.'
     );
+  });
+});
+
+describe('StartupService.refreshAuthState()', () => {
+  it('returns authenticated when probeAuthState returns authenticated', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({ probeAuthState: async () => ({ authenticated: true }) })
+    );
+
+    const state = await service.refreshAuthState();
+
+    expect(state.kind).toBe('authenticated');
+  });
+
+  it('returns unauthenticated with reason preserved when probeAuthState returns not authenticated', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({
+        probeAuthState: async () => ({ authenticated: false, reason: 'CLI reported not logged in.' })
+      })
+    );
+
+    const state = await service.refreshAuthState();
+
+    expect(state.kind).toBe('unauthenticated');
+    expect(state.description).toBe('CLI reported not logged in.');
+  });
+
+  it('returns error with message when probeAuthState throws and CLI is still installed', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({
+        isInstalled: async () => true,
+        probeAuthState: async () => {
+          throw new Error('Probe failed.');
+        }
+      })
+    );
+
+    const state = await service.refreshAuthState();
+
+    expect(state.kind).toBe('error');
+    expect(state.description).toBe('Probe failed.');
+  });
+
+  it('does not call isInstalled during normal refreshAuthState flow', async () => {
+    const isInstalled = vi.fn<() => Promise<boolean>>().mockResolvedValue(true);
+
+    const service = new StartupService(
+      createCopilotAdapter({
+        isInstalled,
+        probeAuthState: async () => ({ authenticated: true })
+      })
+    );
+
+    await service.refreshAuthState();
+
+    expect(isInstalled).not.toHaveBeenCalled();
+  });
+
+  it('returns copilot_missing when probeAuthState throws and isInstalled returns false', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({
+        isInstalled: async () => false,
+        probeAuthState: async () => {
+          throw new Error('CLI gone.');
+        }
+      })
+    );
+
+    const state = await service.refreshAuthState();
+
+    expect(state.kind).toBe('copilot_missing');
+  });
+
+  it('returns copilot_missing when probeAuthState throws and isInstalled also throws', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({
+        isInstalled: async () => { throw new Error('spawn ENOENT'); },
+        probeAuthState: async () => { throw new Error('CLI gone.'); }
+      })
+    );
+
+    const state = await service.refreshAuthState();
+
+    expect(state.kind).toBe('copilot_missing');
   });
 });
 

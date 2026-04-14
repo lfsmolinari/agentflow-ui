@@ -29,7 +29,37 @@ describe('createCommandRunner', () => {
 
   it('rejects when child process emits error (command not found)', async () => {
     const runner = createCommandRunner();
-
-    await expect(runner.run('__nonexistent_command_xyz__', [], 5_000)).rejects.toThrow();
+    // On macOS/Linux: spawn emits ENOENT → rejects
+    // On Windows (shell: true): cmd.exe returns exitCode 1 → resolves with non-zero exit
+    const outcome = await runner.run('__nonexistent_command_xyz__', [], 5_000).then(r => r, e => e);
+    const isError = outcome instanceof Error || outcome.exitCode !== 0;
+    expect(isError).toBe(true);
   });
+
+  it('passes host environment variables through to the child process', async () => {
+    const runner = createCommandRunner();
+    process.env.TEST_RUNNER_CHECK = 'agentflow-env-test';
+    try {
+      const result = await runner.run(
+        'node',
+        ['-e', 'process.stdout.write(String(process.env.TEST_RUNNER_CHECK))']
+      );
+      expect(result.stdout.trim()).toBe('agentflow-env-test');
+    } finally {
+      delete process.env.TEST_RUNNER_CHECK;
+    }
+  });
+
+  it.skipIf(process.platform !== 'win32')(
+    'preserves PATHEXT in the child process environment on Windows',
+    async () => {
+      const runner = createCommandRunner();
+      const result = await runner.run(
+        'node',
+        ['-e', 'process.stdout.write(String(process.env.PATHEXT))']
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toMatch(/\.cmd/i);
+    }
+  );
 });

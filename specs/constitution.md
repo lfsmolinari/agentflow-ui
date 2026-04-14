@@ -49,6 +49,40 @@ This project exists to give Copilot CLI users a desktop experience similar in sp
 - **Test types**: Unit tests for pure application logic and parsing or mapping functions; integration tests for IPC handlers, Copilot CLI adapter behavior, and workspace or session resolution; a small set of end-to-end desktop tests for critical user journeys.
 - **Test approach**: Favor behavior testing at application and integration boundaries over snapshot-heavy UI testing. Mock Copilot CLI execution in most tests, use controlled fixtures for workspace and session discovery, and reserve end-to-end tests for only the most critical desktop-shell flows. For phase 1, session retrieval per folder and GitHub Enterprise login require integration coverage and manual validation, but not dedicated end-to-end coverage.
 
+### Validation Suite
+
+The project validation suite runs in this order. All steps must pass before a task is marked complete.
+
+| Step | Command | When required |
+|---|---|---|
+| Typecheck | `npm run typecheck` | Always |
+| Lint | `npm run lint` | Always |
+| Unit / integration tests | `npm test` | Always |
+| Build | `npm run build` | When config, build paths, aliases, or bundling are changed |
+| End-to-end tests | `npm run test:e2e` | When the change affects startup-state resolution, CLI detection, the install gate, or the login screen |
+
+### End-to-End Test Details
+
+- **Framework**: Playwright with `@playwright/test` and the `_electron` API
+- **Location**: `tests/e2e/` — files match `*.e2e.ts`; Vitest does **not** run these
+- **How it works**: `npm run test:e2e` builds the app first (`npm run build`), then launches the compiled Electron binary as a real desktop window via Playwright
+- **Do not use `npm run dev` for validation** — it opens an interactive window and never exits
+
+#### E2E trigger conditions
+
+Run `npm run test:e2e` when your change touches any of:
+- `src/infrastructure/system/command-runner.ts`
+- `src/infrastructure/copilot/adapter.ts`
+- `src/main/startup-service.ts`
+- `src/main/index.ts`
+- Any install gate or login screen component
+
+#### E2E failure interpretation
+
+- Install gate (`"Copilot CLI required"`) appears when login screen is expected → CLI detection is broken; check `src/infrastructure/system/command-runner.ts` PATH resolution
+- App hangs on the loading screen with no heading visible → startup-state resolution is broken; check `src/main/startup-service.ts`
+- Build fails before tests run → resolve the build error first; e2e cannot run against a broken build
+
 ## Security Requirements
 
 - **Authentication**: Authentication should be delegated to Copilot CLI, including support for `copilot login` and `copilot login --host` for GitHub Enterprise.

@@ -27,7 +27,22 @@ export class StartupService {
   }
 
   async refreshAuthState(): Promise<StartupState> {
-    return this.getStartupState();
+    try {
+      const authState = await this.copilot.probeAuthState();
+      return authState.authenticated
+        ? startupState('authenticated')
+        : startupState('unauthenticated', {
+            description: authState.reason ?? startupState('unauthenticated').description
+          });
+    } catch (error) {
+      const stillInstalled = await this.copilot.isInstalled().catch(() => false);
+      if (!stillInstalled) {
+        return startupState('copilot_missing');
+      }
+      return startupState('error', {
+        description: error instanceof Error ? error.message : startupState('error').description
+      });
+    }
   }
 
   async loginWithGitHub(onData?: (chunk: string) => void): Promise<LoginResponse> {

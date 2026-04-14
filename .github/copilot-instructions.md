@@ -24,3 +24,7 @@ This project uses **Spec-Driven Development (SDD)** with an agent pipeline. The 
 - Keep changes scoped to the current task.
 - Mark uncertainties explicitly rather than guessing.
 - Reference the constitution for project-specific conventions.
+
+## Validation
+
+Before marking any task complete, invoke the `task-validation` skill. It will direct you to the validation suite defined in `specs/constitution.md` under **Testing Standards → Validation Suite**. Do not call `task_complete` if any required step fails.
