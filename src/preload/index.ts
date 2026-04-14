@@ -12,7 +12,8 @@ const api: AgentflowApi = {
     const handler = (_event: Electron.IpcRendererEvent, chunk: string) => callback(chunk);
     ipcRenderer.on(IPC_CHANNELS.loginOutput, handler);
     return () => { ipcRenderer.removeListener(IPC_CHANNELS.loginOutput, handler); };
-  }
+  },
+  logout: () => ipcRenderer.invoke(IPC_CHANNELS.logout)
 };
 
 contextBridge.exposeInMainWorld('agentflow', api);

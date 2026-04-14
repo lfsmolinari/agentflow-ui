@@ -97,6 +97,14 @@ export class CopilotCliAdapter {
       throw new Error('GitHub Enterprise login did not complete successfully.');
     }
   }
+
+  async logout(): Promise<void> {
+    const result = await this.runner.run('copilot', ['logout']);
+    if (result.exitCode !== 0) {
+      console.error(`[CopilotCliAdapter] logout failed (exit ${result.exitCode})`);
+      throw new Error('Logout failed. Please try again.');
+    }
+  }
 }
 
 export { parseAuthStatus };

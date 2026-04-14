@@ -48,6 +48,16 @@ export class StartupService {
     return this.runLogin(() => this.copilot.loginWithEnterprise(normalized.host!, onData));
   }
 
+  async logout(): Promise<StartupState> {
+    try {
+      await this.copilot.logout();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Logout failed. Please try again.';
+      return startupState('error', { description: message, retryable: true });
+    }
+    return startupState('unauthenticated');
+  }
+
   private async runLogin(action: () => Promise<void>): Promise<LoginResponse> {
     try {
       await action();

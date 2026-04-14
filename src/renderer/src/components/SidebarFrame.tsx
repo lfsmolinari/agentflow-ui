@@ -1,4 +1,8 @@
-export const SidebarFrame = () => (
+interface SidebarFrameProps {
+  onLogout: () => void;
+}
+
+export const SidebarFrame = ({ onLogout }: SidebarFrameProps) => (
   <aside className="flex h-full w-[280px] shrink-0 flex-col justify-between border-r border-border bg-panel/80 px-5 py-6">
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -10,11 +14,20 @@ export const SidebarFrame = () => (
         </p>
       </div>
     </div>
-    <button
-      type="button"
-      className="focus-ring inline-flex items-center justify-center rounded-control border border-border px-4 py-3 text-sm font-medium text-textSecondary"
-    >
-      Settings
-    </button>
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        className="focus-ring inline-flex items-center justify-center rounded-control border border-border px-4 py-3 text-sm font-medium text-textSecondary"
+      >
+        Settings
+      </button>
+      <button
+        type="button"
+        onClick={onLogout}
+        className="focus-ring inline-flex items-center justify-center rounded-control px-4 py-3 text-sm font-medium text-textMuted hover:text-textSecondary"
+      >
+        Log out
+      </button>
+    </div>
   </aside>
 );

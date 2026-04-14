@@ -56,6 +56,7 @@ app.whenReady().then(async () => {
       }
     });
   });
+  ipcMain.handle(IPC_CHANNELS.logout, () => startupService.logout());
 
   await createWindow();
 

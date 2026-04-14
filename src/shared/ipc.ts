@@ -11,6 +11,7 @@ export interface AgentflowApi {
   loginWithGitHub: () => Promise<LoginResponse>;
   loginWithGitHubEnterprise: (host: string) => Promise<LoginResponse>;
   onLoginOutput: (callback: (chunk: string) => void) => () => void;
+  logout: () => Promise<StartupState>;
 }
 
 export const IPC_CHANNELS = {
@@ -19,5 +20,6 @@ export const IPC_CHANNELS = {
   openInstallDocs: 'agentflow:open-install-docs',
   loginWithGitHub: 'agentflow:login-github',
   loginWithEnterprise: 'agentflow:login-enterprise',
-  loginOutput: 'agentflow:login-output'
+  loginOutput: 'agentflow:login-output',
+  logout: 'agentflow:logout'
 } as const;

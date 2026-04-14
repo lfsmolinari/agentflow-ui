@@ -37,6 +37,12 @@ const App = () => {
     void refreshState();
   }, []);
 
+  const onLogout = useCallback(async () => {
+    setState(startupState('checking'));
+    const next = await window.agentflow.logout();
+    setState(next);
+  }, []);
+
   const content = useMemo(() => {
     if (state.kind === 'checking') {
       return <CheckingScreen />;
@@ -47,7 +53,7 @@ const App = () => {
     }
 
     if (state.kind === 'authenticated') {
-      return <AuthenticatedShell />;
+      return <AuthenticatedShell onLogout={onLogout} />;
     }
 
     return (
@@ -85,7 +91,7 @@ const App = () => {
         onRetry={refreshState}
       />
     );
-  }, [state, loginOutput, refreshState]);
+  }, [state, loginOutput, refreshState, onLogout]);
 
   return content;
 };
