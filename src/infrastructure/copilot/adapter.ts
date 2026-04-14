@@ -55,7 +55,7 @@ const parseAuthStatus = (result: CommandResult): AuthProbeResult => {
     return { authenticated: true };
   }
 
-  console.error('[CopilotCliAdapter] parseAuthStatus unexpected output:', combined);
+  console.error(`[CopilotCliAdapter] parseAuthStatus: unexpected output (exit ${result.exitCode})`);
   throw new Error('Unable to determine Copilot CLI authentication state.');
 };
 
@@ -84,8 +84,7 @@ export class CopilotCliAdapter {
     const result = await this.runner.run('copilot', ['login'], 5 * 60 * 1000, onData);
 
     if (result.exitCode !== 0) {
-      const detail = `${result.stdout}\n${result.stderr}`.trim();
-      console.error('[CopilotCliAdapter] loginWithGitHub failed:', detail);
+      console.error(`[CopilotCliAdapter] loginWithGitHub failed (exit ${result.exitCode})`);
       throw new Error('GitHub login did not complete successfully.');
     }
   }
@@ -94,8 +93,7 @@ export class CopilotCliAdapter {
     const result = await this.runner.run('copilot', ['login', '--host', host], 5 * 60 * 1000, onData);
 
     if (result.exitCode !== 0) {
-      const detail = `${result.stdout}\n${result.stderr}`.trim();
-      console.error('[CopilotCliAdapter] loginWithEnterprise failed:', detail);
+      console.error(`[CopilotCliAdapter] loginWithEnterprise failed (exit ${result.exitCode})`);
       throw new Error('GitHub Enterprise login did not complete successfully.');
     }
   }

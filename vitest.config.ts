@@ -5,10 +5,15 @@ import { resolve } from 'node:path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
     globals: true,
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
-    setupFiles: ['./tests/setup.ts']
+    setupFiles: ['./tests/setup.ts'],
+    environmentMatchGlobs: [
+      ['tests/renderer/**', 'jsdom'],
+      ['tests/main/**', 'node'],
+      ['tests/infrastructure/**', 'node'],
+      ['tests/shared/**', 'node'],
+    ],
   },
   resolve: {
     alias: {

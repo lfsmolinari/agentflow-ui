@@ -20,6 +20,7 @@ export const LoginScreen = ({ state, loginOutput, onLogin, onEnterpriseLogin, on
 
   const deviceCode = loginOutput.match(/([A-Z0-9]{4}-[A-Z0-9]{4})/)?.[1] ?? null;
   const openUrl = loginOutput.match(/https:\/\/\S+/)?.[0] ?? null;
+  const safeOpenUrl = openUrl?.startsWith('https://github.com/') ? openUrl : null;
 
   const submitEnterprise = async () => {
     const normalized = normalizeEnterpriseHost(host);
@@ -52,9 +53,9 @@ export const LoginScreen = ({ state, loginOutput, onLogin, onEnterpriseLogin, on
             <div className="mt-6 rounded-panel border border-border bg-panelElevated px-6 py-5">
               <p className="text-sm text-textSecondary">Enter this code on GitHub to complete sign-in:</p>
               <p className="mt-2 text-3xl font-bold tracking-widest text-text">{deviceCode}</p>
-              {openUrl && (
+              {safeOpenUrl && (
                 <p className="mt-2 text-sm text-textMuted">
-                  Open: <span className="font-mono text-accent">{openUrl}</span>
+                  Open: <span className="font-mono text-accent">{safeOpenUrl}</span>
                 </p>
               )}
             </div>

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { IPC_CHANNELS } from '@shared/ipc';
 import { startupState } from '@shared/startup-state';
 import { StartupService } from './startup-service';
+import { validateEnterpriseHost } from './ipc-helpers';
 import { COPILOT_INSTALL_URL } from '@infra/system/external-links';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -40,15 +41,19 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle(IPC_CHANNELS.loginWithGitHub, (event) =>
     startupService.loginWithGitHub((chunk) => {
-      event.sender.send(IPC_CHANNELS.loginOutput, chunk);
+      if (!event.sender.isDestroyed()) {
+        event.sender.send(IPC_CHANNELS.loginOutput, chunk);
+      }
     })
   );
   ipcMain.handle(IPC_CHANNELS.loginWithEnterprise, (event, host: unknown) => {
-    if (typeof host !== 'string') {
-      return startupState('error', { description: 'Invalid request.', retryable: false });
+    if (!validateEnterpriseHost(host)) {
+      return { state: startupState('error', { description: 'Invalid request.', retryable: false }) };
     }
     return startupService.loginWithGitHubEnterprise(host, (chunk) => {
-      event.sender.send(IPC_CHANNELS.loginOutput, chunk);
+      if (!event.sender.isDestroyed()) {
+        event.sender.send(IPC_CHANNELS.loginOutput, chunk);
+      }
     });
   });
 

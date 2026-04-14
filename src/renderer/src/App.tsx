@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { StartupState } from '@shared/startup-state';
 import { startupState } from '@shared/startup-state';
 import { readSystemTheme } from './lib/theme';
@@ -27,11 +27,11 @@ const App = () => {
     return () => media.removeEventListener('change', listener);
   }, []);
 
-  const refreshState = async () => {
+  const refreshState = useCallback(async () => {
     setState(startupState('checking'));
     const next = await window.agentflow.getStartupState();
     setState(next);
-  };
+  }, []);
 
   useEffect(() => {
     void refreshState();
@@ -60,10 +60,13 @@ const App = () => {
           const unlisten = window.agentflow.onLoginOutput((chunk) => {
             setLoginOutput(prev => prev + chunk);
           });
-          const result = await window.agentflow.loginWithGitHub();
-          unlisten();
-          setLoginOutput('');
-          setState(result.state);
+          try {
+            const result = await window.agentflow.loginWithGitHub();
+            setState(result.state);
+          } finally {
+            unlisten();
+            setLoginOutput('');
+          }
         }}
         onEnterpriseLogin={async (host) => {
           setLoginOutput('');
@@ -71,15 +74,18 @@ const App = () => {
           const unlisten = window.agentflow.onLoginOutput((chunk) => {
             setLoginOutput(prev => prev + chunk);
           });
-          const result = await window.agentflow.loginWithGitHubEnterprise(host);
-          unlisten();
-          setLoginOutput('');
-          setState(result.state);
+          try {
+            const result = await window.agentflow.loginWithGitHubEnterprise(host);
+            setState(result.state);
+          } finally {
+            unlisten();
+            setLoginOutput('');
+          }
         }}
         onRetry={refreshState}
       />
     );
-  }, [state, loginOutput]);
+  }, [state, loginOutput, refreshState]);
 
   return content;
 };

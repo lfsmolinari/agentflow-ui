@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '@renderer/App';
 import { startupState } from '@shared/startup-state';
+import type { LoginResponse } from '@shared/ipc';
 
 declare global {
   interface Window {
@@ -159,5 +160,46 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Workspaces' })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
+
+  it('shows Authenticating button label while login is in progress', async () => {
+    let resolveLogin!: (val: LoginResponse) => void;
+    const loginPromise = new Promise<LoginResponse>(resolve => { resolveLogin = resolve; });
+
+    window.agentflow = {
+      ...window.agentflow,
+      getStartupState: async () => startupState('unauthenticated'),
+      loginWithGitHub: () => loginPromise,
+    };
+
+    render(<App />);
+    await screen.findByText('Sign in to continue');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue with GitHub' }));
+    expect(screen.getByRole('button', { name: 'Authenticating…' })).toBeDisabled();
+
+    resolveLogin({ state: { kind: 'unauthenticated', title: '', description: '', retryable: false } });
+  });
+
+  it('shows the device code when onLoginOutput fires a code chunk', async () => {
+    let capturedCallback: ((chunk: string) => void) | null = null;
+    let resolveLogin!: (val: LoginResponse) => void;
+    const loginPromise = new Promise<LoginResponse>(resolve => { resolveLogin = resolve; });
+
+    window.agentflow = {
+      ...window.agentflow,
+      getStartupState: async () => startupState('unauthenticated'),
+      loginWithGitHub: () => loginPromise,
+      onLoginOutput: (cb) => { capturedCallback = cb; return () => {}; },
+    };
+
+    render(<App />);
+    await screen.findByText('Sign in to continue');
+    await userEvent.click(screen.getByRole('button', { name: 'Continue with GitHub' }));
+
+    act(() => { capturedCallback?.('First copy your one-time code: ABCD-1234'); });
+    expect(screen.getByText('ABCD-1234')).toBeInTheDocument();
+
+    resolveLogin({ state: { kind: 'unauthenticated', title: '', description: '', retryable: false } });
   });
 });

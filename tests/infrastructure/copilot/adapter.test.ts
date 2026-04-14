@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CopilotCliAdapter, parseAuthStatus } from '@infra/copilot/adapter';
 import type { CommandRunner } from '@infra/system/command-runner';
 
@@ -26,7 +26,7 @@ describe('parseAuthStatus', () => {
     });
   });
 
-  it('does not treat empty successful output as authenticated', () => {
+  it('returns authenticated for exitCode 0 with no output (optimistic auth assumption)', () => {
     expect(
       parseAuthStatus({
         exitCode: 0,
@@ -178,5 +178,35 @@ describe('CopilotCliAdapter', () => {
 
     const adapter = new CopilotCliAdapter(runner);
     await expect(adapter.isInstalled()).resolves.toBe(false);
+  });
+
+  it('loginWithGitHub forwards onData chunks to the runner', async () => {
+    const mockRunner: CommandRunner = {
+      run: async (_cmd, _args, _timeout, onData) => {
+        onData?.('code-chunk');
+        return { exitCode: 0, stdout: '', stderr: '' };
+      }
+    };
+
+    const adapter = new CopilotCliAdapter(mockRunner);
+    const spy = vi.fn();
+    await adapter.loginWithGitHub(spy);
+
+    expect(spy).toHaveBeenCalledWith('code-chunk');
+  });
+
+  it('loginWithEnterprise forwards onData chunks to the runner', async () => {
+    const mockRunner: CommandRunner = {
+      run: async (_cmd, _args, _timeout, onData) => {
+        onData?.('code-chunk');
+        return { exitCode: 0, stdout: '', stderr: '' };
+      }
+    };
+
+    const adapter = new CopilotCliAdapter(mockRunner);
+    const spy = vi.fn();
+    await adapter.loginWithEnterprise('github.example.com', spy);
+
+    expect(spy).toHaveBeenCalledWith('code-chunk');
   });
 });

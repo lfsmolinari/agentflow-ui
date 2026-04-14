@@ -29,4 +29,16 @@ describe('normalizeEnterpriseHost', () => {
       error: 'Enter the hostname only, without a path.'
     });
   });
+
+  it('trims whitespace and normalizes the host', () => {
+    expect(normalizeEnterpriseHost('  github.example.com  ')).toEqual({
+      ok: true,
+      host: 'github.example.com'
+    });
+  });
+
+  it('rejects a hostname with a port number', () => {
+    const result = normalizeEnterpriseHost('github.example.com:8443');
+    expect(result.ok).toBe(false);
+  });
 });

@@ -38,23 +38,35 @@ export const createCommandRunner = (): CommandRunner => ({
 
       let stdout = '';
       let stderr = '';
+      let aborted = false;
 
       child.stdout.on('data', (chunk) => {
-        stdout += String(chunk);
-        onData?.(String(chunk));
+        if (!aborted) {
+          stdout += String(chunk);
+          onData?.(String(chunk));
+        }
       });
 
       child.stderr.on('data', (chunk) => {
-        stderr += String(chunk);
-        onData?.(String(chunk));
+        if (!aborted) {
+          stderr += String(chunk);
+          onData?.(String(chunk));
+        }
       });
 
       const timer = setTimeout(() => {
-        child.kill();
+        aborted = true;
+        child.kill('SIGTERM');
+        const forcekill = process.platform === 'win32'
+          ? () => child.kill()
+          : () => child.kill('SIGKILL');
+        const killGuard = setTimeout(forcekill, 3_000);
+        child.once('close', () => clearTimeout(killGuard));
         reject(new Error(`Command timed out after ${timeoutMs}ms: ${command} ${args.join(' ')}`));
       }, timeoutMs);
 
       child.on('error', (error) => {
+        aborted = true;
         clearTimeout(timer);
         reject(error);
       });

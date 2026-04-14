@@ -130,6 +130,23 @@ describe('StartupService.loginWithGitHub()', () => {
 
     expect(result.state.kind).toBe('authenticated');
   });
+
+  it('returns error with safe generic message when adapter loginWithGitHub throws', async () => {
+    const service = new StartupService(
+      createCopilotAdapter({
+        loginWithGitHub: async () => {
+          throw new Error('raw CLI output');
+        }
+      })
+    );
+
+    const result = await service.loginWithGitHub();
+
+    expect(result.state.kind).toBe('error');
+    expect(result.state.description).toBe(
+      'Authentication failed. Please try again or run the Copilot CLI directly.'
+    );
+  });
 });
 
 describe('StartupService login refresh behavior', () => {
