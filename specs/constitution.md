@@ -82,6 +82,45 @@ The following files are known triggers (not exhaustive):
 - `src/main/index.ts`
 - Any install gate or login screen component
 
+#### Environment variable gates
+
+E2E tests that require a specific machine state are gated by environment variables. Set the
+relevant variable before running `npm run test:e2e`:
+
+| Variable | Value | Required machine state |
+|---|---|---|
+| `COPILOT_UNAUTHENTICATED` | `1` | Copilot CLI installed, user logged out (`copilot logout`) |
+| `COPILOT_AUTHENTICATED` | `1` | Copilot CLI installed, user logged in (`copilot auth status`) |
+
+Tests that manipulate the environment (e.g., the install-gate test that strips PATH) run
+unconditionally and do not require an env variable.
+
+The login flow itself cannot be automated — GitHub OAuth requires interactive browser
+authorization. It is covered by the `COPILOT_UNAUTHENTICATED=1` test up to the point of
+presenting the login screen; the subsequent OAuth step is manual-only.
+
+#### E2E file organization
+
+One file per feature area. Keep the rule simple: if the tests are about the same user-facing
+concern, they belong in the same file; if they cover a distinct product surface, they get their
+own file.
+
+`startup.e2e.ts` covers app launch, install-gate, and authentication checks — these are all
+pre-session concerns and stay together. Do not add feature-specific tests to this file.
+
+As new features land, create a new `*.e2e.ts` file named after the feature area:
+
+| File | Covers |
+|---|---|
+| `startup.e2e.ts` | App launch, install gate, login screen — all pre-session state |
+| `workspace.e2e.ts` | Workspace discovery and selection |
+| `session.e2e.ts` | Session listing, creation, and resumption |
+| `agent-execution.e2e.ts` | Agent invocation and response flows |
+
+Suggested naming pattern: `{feature-area}.e2e.ts` using kebab-case, matching the feature folder
+name in `specs/` where one exists. Never use numeric prefixes or test-type suffixes — the
+`.e2e.ts` extension is the only required marker.
+
 #### E2E failure interpretation
 
 - Install gate (`"Copilot CLI required"`) appears when login screen is expected → CLI detection is broken; check `src/infrastructure/system/command-runner.ts` PATH resolution

@@ -65,14 +65,12 @@ export class CopilotCliAdapter {
   async isInstalled(): Promise<boolean> {
     try {
       const result = await this.runner.run('copilot', ['--version']);
-      console.log('[isInstalled] exitCode:', result.exitCode, 'stdout:', result.stdout.trim(), 'stderr:', result.stderr.trim());
       if (result.exitCode !== 0) return false;
       const combined = `${result.stdout}\n${result.stderr}`;
       // VS Code ships a shim that outputs this when the real CLI is missing
       if (combined.includes('Cannot find GitHub Copilot CLI')) return false;
       return true;
-    } catch (e) {
-      console.error('[isInstalled] threw:', e);
+    } catch {
       return false;
     }
   }
