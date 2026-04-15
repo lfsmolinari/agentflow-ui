@@ -8,6 +8,7 @@ import { validateEnterpriseHost } from './ipc-helpers';
 import { COPILOT_INSTALL_URL } from '@infra/system/external-links';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+app.name = 'AgentFlow UI';
 const startupService = new StartupService();
 
 const createWindow = async (): Promise<void> => {
@@ -35,7 +36,19 @@ const createWindow = async (): Promise<void> => {
 };
 
 app.whenReady().then(async () => {
-  Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(
+    process.platform === 'darwin'
+      ? Menu.buildFromTemplate([{
+          label: app.name,
+          submenu: [
+            { role: 'quit' }
+          ]
+        }])
+      : Menu.buildFromTemplate([])
+  );
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(join(__dirname, '../renderer/AgentFlowUI-favicon.png'));
+  }
   ipcMain.handle(IPC_CHANNELS.getStartupState, () => startupService.getStartupState());
   ipcMain.handle(IPC_CHANNELS.refreshAuthState, () => startupService.refreshAuthState());
   ipcMain.handle(IPC_CHANNELS.openInstallDocs, async () => {
