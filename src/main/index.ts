@@ -1,15 +1,23 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, dialog } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { IPC_CHANNELS } from '@shared/ipc';
 import { startupState } from '@shared/startup-state';
 import { StartupService } from './startup-service';
+import { WorkspaceService } from './workspace-service';
+import { SessionService } from './session-service';
+import { ChatService } from './chat-service';
 import { validateEnterpriseHost } from './ipc-helpers';
 import { COPILOT_INSTALL_URL } from '@infra/system/external-links';
+import { CopilotSdkProvider } from '@infra/copilot/sdk-provider';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 app.name = 'AgentFlow UI';
-const startupService = new StartupService();
+const chatProvider = new CopilotSdkProvider();
+const startupService = new StartupService(undefined, chatProvider);
+const workspaceService = new WorkspaceService();
+const sessionService = new SessionService(chatProvider);
+const chatService = new ChatService(chatProvider);
 
 const createWindow = async (): Promise<void> => {
   const window = new BrowserWindow({
@@ -72,6 +80,69 @@ app.whenReady().then(async () => {
     });
   });
   ipcMain.handle(IPC_CHANNELS.logout, () => startupService.logout());
+
+  ipcMain.handle(IPC_CHANNELS.listWorkspaces, () => workspaceService.load());
+
+  ipcMain.handle(IPC_CHANNELS.addWorkspace, async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    if (result.canceled || result.filePaths.length === 0) {
+      return workspaceService.load();
+    }
+    return workspaceService.add(result.filePaths[0]);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.listSessions, async (_event, workspacePath: unknown) => {
+    if (typeof workspacePath !== 'string' || workspacePath.trim() === '') return [];
+    return sessionService.listSessions(workspacePath);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.startNewSession, async (_event, workspacePath: unknown) => {
+    if (typeof workspacePath !== 'string' || workspacePath.trim() === '') {
+      return { error: 'Invalid workspacePath' };
+    }
+    try {
+      const session = await chatService.startNewSession(workspacePath);
+      return { session };
+    } catch (err) {
+      return { error: (err as Error).message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.openSession, async (_event, sessionId: unknown) => {
+    if (typeof sessionId !== 'string' || !/^[\w-]+$/.test(sessionId)) {
+      return { error: 'Invalid session ID' };
+    }
+    return chatService.openSession(sessionId);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.sendMessage, async (event, sessionId: unknown, text: unknown) => {
+    if (typeof sessionId !== 'string' || !/^[\w-]+$/.test(sessionId)) return { error: 'Invalid sessionId' };
+    console.log('[IPC] sendMessage called with sessionId:', sessionId);
+    if (typeof text !== 'string' || text.trim() === '') return { error: 'Invalid text' };
+    if (text.length > 64_000) return { error: 'Message too long' };
+    try {
+      await chatService.sendMessage(sessionId, text as string, (chunk) => {
+        try {
+          if (!event.sender.isDestroyed()) {
+            event.sender.send(IPC_CHANNELS.chatOutput, chunk);
+          }
+        } catch {
+          // renderer was destroyed between the isDestroyed() check and send()
+        }
+      });
+      console.log('[IPC] sendMessage completed for sessionId:', sessionId);
+    } catch (err) {
+      console.log('[IPC] sendMessage error for sessionId:', sessionId, (err as Error).message);
+      return { error: (err as Error).message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.closeSession, (_event, sessionId: unknown) => {
+    if (typeof sessionId !== 'string' || !/^[\w-]+$/.test(sessionId)) return;
+    chatService.closeSession(sessionId);
+  });
+
+  app.on('before-quit', () => chatService.closeAll());
 
   await createWindow();
 

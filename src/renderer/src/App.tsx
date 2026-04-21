@@ -35,7 +35,7 @@ const App = () => {
 
   useEffect(() => {
     void refreshState();
-  }, []);
+  }, [refreshState]);
 
   const onLogout = useCallback(async () => {
     setState(startupState('checking'));

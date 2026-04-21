@@ -1,7 +1,7 @@
 ---
 name: Designer
 description: Turn product and UX stories into clear UI/UX specifications, flows, screen states, and interface guidance for Architect and Coder.
-model: Claude Opus 4.6
+model: Gemini 3.1 Pro (Preview) (copilot)
 tools: ['read', 'search/codebase', 'search/usages', 'web', 'edit']
 user-invocable: true
 ---

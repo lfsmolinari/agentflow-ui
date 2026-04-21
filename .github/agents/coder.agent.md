@@ -1,7 +1,7 @@
 ---
 name: Coder
 description: Implement focused changes from an approved plan, trace work to spec tasks, and validate with minimal scoped edits.
-model: Claude Sonnet 4.6
+model: Claude Opus 4.6
 tools: ['vscode', 'read', 'edit', 'search/codebase', 'search/usages', 'execute', 'read/terminalLastCommand']
 user-invocable: true
 ---

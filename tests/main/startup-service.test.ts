@@ -235,10 +235,8 @@ describe('StartupService.refreshAuthState()', () => {
 });
 
 describe('StartupService login refresh behavior', () => {
-  it('preserves refreshAuthState error results after login', async () => {
-    const probeAuthState = vi
-      .fn<() => Promise<AuthProbeResult>>()
-      .mockRejectedValue(new Error('Probe failed unexpectedly.'));
+  it('returns authenticated immediately after successful login without re-probing', async () => {
+    const probeAuthState = vi.fn<() => Promise<AuthProbeResult>>();
     const loginWithGitHub = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
     const service = new StartupService(
@@ -246,33 +244,27 @@ describe('StartupService login refresh behavior', () => {
         probeAuthState,
         loginWithGitHub
       })
+    );
+
+    const result = await service.loginWithGitHub();
+
+    expect(result.state.kind).toBe('authenticated');
+    // runLogin trusts the login exit code and does not re-probe
+    expect(probeAuthState).not.toHaveBeenCalled();
+  });
+
+  it('returns error when the login action itself throws', async () => {
+    const loginWithGitHub = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('GitHub login did not complete successfully.'));
+
+    const service = new StartupService(
+      createCopilotAdapter({ loginWithGitHub })
     );
 
     const result = await service.loginWithGitHub();
 
     expect(result.state.kind).toBe('error');
-    expect(result.state.description).toBe('Probe failed unexpectedly.');
-  });
-
-  it('uses generic unauthenticated feedback only when refresh resolves unauthenticated', async () => {
-    const probeAuthState = vi
-      .fn<() => Promise<AuthProbeResult>>()
-      .mockResolvedValue({ authenticated: false, reason: 'CLI reported not logged in.' });
-    const loginWithGitHub = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-
-    const service = new StartupService(
-      createCopilotAdapter({
-        probeAuthState,
-        loginWithGitHub
-      })
-    );
-
-    const result = await service.loginWithGitHub();
-
-    expect(result.state.kind).toBe('unauthenticated');
-    expect(result.state.description).toBe(
-      'Authentication did not complete successfully. Please try again.'
-    );
     expect(result.state.retryable).toBe(true);
   });
 });

@@ -4,19 +4,6 @@ import App from '@renderer/App';
 import { startupState } from '@shared/startup-state';
 import type { LoginResponse } from '@shared/ipc';
 
-declare global {
-  interface Window {
-    agentflow: {
-      getStartupState: () => Promise<ReturnType<typeof startupState>>;
-      refreshAuthState: () => Promise<ReturnType<typeof startupState>>;
-      openCopilotInstallInstructions: () => Promise<void>;
-      loginWithGitHub: () => Promise<{ state: ReturnType<typeof startupState> }>;
-      loginWithGitHubEnterprise: (host: string) => Promise<{ state: ReturnType<typeof startupState> }>;
-      onLoginOutput: (callback: (chunk: string) => void) => () => void;
-    };
-  }
-}
-
 describe('App', () => {
   beforeEach(() => {
     window.agentflow = {
@@ -25,7 +12,16 @@ describe('App', () => {
       openCopilotInstallInstructions: async () => undefined,
       loginWithGitHub: async () => ({ state: startupState('authenticated') }),
       loginWithGitHubEnterprise: async () => ({ state: startupState('authenticated') }),
-      onLoginOutput: () => () => undefined
+      onLoginOutput: () => () => undefined,
+      logout: async () => startupState('unauthenticated'),
+      listWorkspaces: async () => [],
+      addWorkspace: async () => [],
+      listSessions: async () => [],
+      startNewSession: async () => ({ session: { id: '', title: '', workspacePath: '' } }),
+      openSession: async () => [],
+      sendMessage: async () => undefined,
+      onChatOutput: () => () => undefined,
+      closeSession: async () => undefined,
     };
   });
 
@@ -51,8 +47,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
     expect(screen.getByText('Your workspace list will appear here once you open your first project.')).toBeInTheDocument();
     expect(screen.getByText(/Open a folder to begin using AgentFlow UI\./i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start a new project' })).toBeDisabled();
-    expect(screen.getByText('Workspace selection starts in Milestone 2.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start a new project' })).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByText('Type your message...')).not.toBeInTheDocument();
   });
