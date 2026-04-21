@@ -17,7 +17,7 @@ export const createCommandRunner = (): CommandRunner => ({
 
       const child = spawn(command, args, {
         env,
-        shell: process.platform === 'win32',
+        shell: false,
         stdio: ['ignore', 'pipe', 'pipe']
       });
 

@@ -25,7 +25,7 @@ test.describe('Startup flow', () => {
 
       const heading = window.locator('h1');
       await expect(heading).toHaveText(
-        /^(Copilot CLI required|Sign in to continue|Start a new project)$/,
+        /^(Copilot CLI required|Sign in to continue|Start a new project|No chats yet)$/,
         { timeout: STATE_RESOLUTION_TIMEOUT }
       );
     } finally {
@@ -92,10 +92,13 @@ test.describe('Startup flow', () => {
       const heading = window.locator('h1');
       await expect(
         heading,
-        'Expected authenticated shell ("Start a new project").\n' +
+        'Expected authenticated shell ("Start a new project" or "No chats yet").\n' +
         '  → Got install gate: CLI not found on PATH.\n' +
         '  → Got login screen: user is not authenticated — run `copilot login` first.'
-      ).toHaveText('Start a new project', { timeout: STATE_RESOLUTION_TIMEOUT });
+      ).toHaveText(
+        /^(Start a new project|No chats yet)$/,
+        { timeout: STATE_RESOLUTION_TIMEOUT }
+      );
     } finally {
       await app.close();
     }

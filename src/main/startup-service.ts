@@ -76,22 +76,10 @@ export class StartupService {
   private async runLogin(action: () => Promise<void>): Promise<LoginResponse> {
     try {
       await action();
-      const refreshed = await this.refreshAuthState();
-
-      if (refreshed.kind === 'authenticated') {
-        return { state: refreshed };
-      }
-
-      if (refreshed.kind !== 'unauthenticated') {
-        return { state: refreshed };
-      }
-
-      return {
-        state: startupState('unauthenticated', {
-          description: 'Authentication did not complete successfully. Please try again.',
-          retryable: true
-        })
-      };
+      // copilot login exits 0 only after credentials are saved — trust the exit code.
+      // Re-probing via the SDK immediately after login is unreliable because the new
+      // CopilotClient process may not have loaded credentials by the time listSessions() runs.
+      return { state: startupState('authenticated') };
     } catch (error) {
       console.error('[StartupService] Login failed:', error);
       return {

@@ -13,7 +13,19 @@ const api: AgentflowApi = {
     ipcRenderer.on(IPC_CHANNELS.loginOutput, handler);
     return () => { ipcRenderer.removeListener(IPC_CHANNELS.loginOutput, handler); };
   },
-  logout: () => ipcRenderer.invoke(IPC_CHANNELS.logout)
+  logout: () => ipcRenderer.invoke(IPC_CHANNELS.logout),
+  listWorkspaces: () => ipcRenderer.invoke(IPC_CHANNELS.listWorkspaces),
+  addWorkspace: () => ipcRenderer.invoke(IPC_CHANNELS.addWorkspace),
+  listSessions: (workspacePath) => ipcRenderer.invoke(IPC_CHANNELS.listSessions, workspacePath),
+  startNewSession: (workspacePath) => ipcRenderer.invoke(IPC_CHANNELS.startNewSession, workspacePath),
+  openSession: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.openSession, sessionId),
+  sendMessage: (sessionId, text) => ipcRenderer.invoke(IPC_CHANNELS.sendMessage, sessionId, text),
+  onChatOutput: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, chunk: string) => callback(chunk);
+    ipcRenderer.on(IPC_CHANNELS.chatOutput, handler);
+    return () => { ipcRenderer.removeListener(IPC_CHANNELS.chatOutput, handler); };
+  },
+  closeSession: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.closeSession, sessionId)
 };
 
 contextBridge.exposeInMainWorld('agentflow', api);

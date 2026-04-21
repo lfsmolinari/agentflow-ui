@@ -17,7 +17,7 @@ describe('createCommandRunner', () => {
     await runner.run('echo', ['hello'], 15_000, onData);
 
     expect(onData).toHaveBeenCalled();
-    const received = onData.mock.calls.map((c: [string]) => c[0]).join('');
+    const received = onData.mock.calls.map((c: string[]) => c[0]).join('');
     expect(received.trim()).toBe('hello');
   });
 
