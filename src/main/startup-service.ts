@@ -1,10 +1,17 @@
 import { normalizeEnterpriseHost } from '@shared/enterprise-host';
 import type { LoginResponse } from '@shared/ipc';
-import { startupState, type StartupState } from '@shared/startup-state';
+import { startupState, type StartupState, type AuthProbeResult } from '@shared/startup-state';
 import { CopilotCliAdapter } from '@infra/copilot/adapter';
 
+interface AuthProber {
+  probeAuthState(): Promise<AuthProbeResult>;
+}
+
 export class StartupService {
-  constructor(private readonly copilot = new CopilotCliAdapter()) {}
+  constructor(
+    private readonly copilot = new CopilotCliAdapter(),
+    private readonly sdkProber?: AuthProber
+  ) {}
 
   async getStartupState(): Promise<StartupState> {
     try {
@@ -13,7 +20,8 @@ export class StartupService {
         return startupState('copilot_missing');
       }
 
-      const authState = await this.copilot.probeAuthState();
+      const prober: AuthProber = this.sdkProber ?? this.copilot;
+      const authState = await prober.probeAuthState();
       return authState.authenticated
         ? startupState('authenticated')
         : startupState('unauthenticated', {
@@ -28,7 +36,8 @@ export class StartupService {
 
   async refreshAuthState(): Promise<StartupState> {
     try {
-      const authState = await this.copilot.probeAuthState();
+      const prober: AuthProber = this.sdkProber ?? this.copilot;
+      const authState = await prober.probeAuthState();
       return authState.authenticated
         ? startupState('authenticated')
         : startupState('unauthenticated', {

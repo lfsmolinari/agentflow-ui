@@ -58,6 +58,7 @@ describe('CopilotSdkProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(nodeFsSync.realpathSync).mockImplementation((p) => String(p));
+    vi.mocked(nodeFs.readdir).mockResolvedValue([]);
     provider = new CopilotSdkProvider();
   });
 
@@ -109,6 +110,11 @@ describe('CopilotSdkProvider', () => {
 
   describe('listSessions', () => {
     it('returns sessions matching the workspace path from sidecar', async () => {
+      vi.mocked(nodeFs.readdir).mockResolvedValue([
+        { name: 'sess-1', isDirectory: () => true },
+        { name: 'sess-2', isDirectory: () => true },
+      ] as unknown as Awaited<ReturnType<typeof nodeFs.readdir>>);
+
       const client = getMockClient();
       client.listSessions.mockResolvedValue([
         { sessionId: 'sess-1', startTime: '2026-01-01T00:00:00Z', modifiedTime: '2026-01-01T00:00:00Z' },
@@ -126,6 +132,10 @@ describe('CopilotSdkProvider', () => {
     });
 
     it('returns empty array when no sessions match the workspace', async () => {
+      vi.mocked(nodeFs.readdir).mockResolvedValue([
+        { name: 'sess-1', isDirectory: () => true },
+      ] as unknown as Awaited<ReturnType<typeof nodeFs.readdir>>);
+
       const client = getMockClient();
       client.listSessions.mockResolvedValue([
         { sessionId: 'sess-1', startTime: '2026-01-01T00:00:00Z', modifiedTime: '2026-01-01T00:00:00Z' },
@@ -138,10 +148,8 @@ describe('CopilotSdkProvider', () => {
       expect(sessions).toEqual([]);
     });
 
-    it('returns empty array when listSessions throws', async () => {
-      const client = getMockClient();
-      client.listSessions.mockRejectedValue(new Error('SDK error'));
-
+    it('returns empty array when readdir throws', async () => {
+      vi.mocked(nodeFs.readdir).mockRejectedValue(new Error('no such dir'));
       const sessions = await provider.listSessions('/my/workspace');
       expect(sessions).toEqual([]);
     });
@@ -157,9 +165,9 @@ describe('CopilotSdkProvider', () => {
         on: vi.fn(() => vi.fn()),
         sendAndWait: vi.fn(),
         getMessages: vi.fn().mockResolvedValue([
-          { type: 'user.message', content: 'hello' },
-          { type: 'assistant.message', content: 'hi there' },
-          { type: 'some.other.event', content: 'ignored' },
+          { type: 'user.message', data: { content: 'hello' } },
+          { type: 'assistant.message', data: { content: 'hi there' } },
+          { type: 'some.other.event', data: {} },
         ]),
         disconnect: vi.fn().mockResolvedValue(undefined),
       };
@@ -269,6 +277,22 @@ describe('CopilotSdkProvider', () => {
 
       provider.closeAll();
       expect(getMockClient().stop).toHaveBeenCalled();
+    });
+  });
+
+  // ── probeAuthState ────────────────────────────────────────────────────────
+
+  describe('probeAuthState', () => {
+    it('returns authenticated: true when listSessions resolves', async () => {
+      getMockClient().listSessions.mockResolvedValue([]);
+      const result = await provider.probeAuthState();
+      expect(result).toEqual({ authenticated: true });
+    });
+
+    it('returns authenticated: false when listSessions throws', async () => {
+      getMockClient().listSessions.mockRejectedValue(new Error('not authenticated'));
+      const result = await provider.probeAuthState();
+      expect(result.authenticated).toBe(false);
     });
   });
 });

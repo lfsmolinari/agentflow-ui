@@ -6,6 +6,7 @@ import { CopilotClient, approveAll } from '@github/copilot-sdk';
 import type { CopilotSession, SessionMetadata, SessionEvent } from '@github/copilot-sdk';
 import type { ChatProvider } from '@infra/chat/provider';
 import type { Session, ChatMessage } from '@shared/workspace-types';
+import type { AuthProbeResult } from '@shared/startup-state';
 
 // Strategist agent persona — extracted from .github/agents/strategist.agent.md
 const STRATEGIST_PROMPT = `You are a strategic product thinking companion.
@@ -106,22 +107,39 @@ export class CopilotSdkProvider implements ChatProvider {
 
   async listSessions(workspacePath: string): Promise<Session[]> {
     const normalizedPath = normalizePath(workspacePath);
-    let allSessions: SessionMetadata[];
+    const homeDir = process.env.COPILOT_HOME ?? path.join(os.homedir(), '.copilot');
+    const sessionsDir = path.join(homeDir, 'session-state');
+
+    // Scan sidecar files as the source of truth for sessions created by this app.
+    // Do NOT rely on client.listSessions() as the primary list — copilot login can
+    // reset the SDK's SQLite DB, wiping its session list while sidecar files survive.
+    let sessionDirs: string[];
     try {
-      allSessions = await this.client.listSessions();
+      const entries = await fs.readdir(sessionsDir, { withFileTypes: true });
+      sessionDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
     } catch {
       return [];
     }
 
+    // Optionally enrich with SDK metadata (titles/summaries) — gracefully degraded.
+    const sdkMeta = new Map<string, SessionMetadata>();
+    try {
+      const allSessions = await this.client.listSessions();
+      for (const m of allSessions) sdkMeta.set(m.sessionId, m);
+    } catch {
+      // SDK list unavailable — fall back to sidecar-only data
+    }
+
     const results: Session[] = [];
-    for (const meta of allSessions) {
+    for (const sessionId of sessionDirs) {
       try {
-        const raw = await fs.readFile(sidecarPath(meta.sessionId), 'utf-8');
+        const raw = await fs.readFile(sidecarPath(sessionId), 'utf-8');
         const sidecar = JSON.parse(raw) as SidecarData;
         if (normalizePath(sidecar.workspacePath) !== normalizedPath) continue;
+        const meta = sdkMeta.get(sessionId);
         results.push({
-          id: meta.sessionId,
-          title: meta.summary ?? new Date(meta.startTime).toLocaleString(),
+          id: sessionId,
+          title: meta?.summary ?? new Date(sidecar.createdAt).toLocaleString(),
           workspacePath: sidecar.workspacePath,
           createdAt: sidecar.createdAt,
         });
@@ -180,9 +198,9 @@ export class CopilotSdkProvider implements ChatProvider {
       const messages: ChatMessage[] = [];
       for (const event of events) {
         if (event.type === 'user.message') {
-          messages.push({ role: 'user', content: (event as unknown as { type: string; content: string }).content });
+          messages.push({ role: 'user', content: (event as unknown as { type: string; data: { content: string } }).data.content });
         } else if (event.type === 'assistant.message') {
-          messages.push({ role: 'assistant', content: (event as unknown as { type: string; content: string }).content });
+          messages.push({ role: 'assistant', content: (event as unknown as { type: string; data: { content: string } }).data.content });
         }
       }
       return messages;
@@ -226,6 +244,15 @@ export class CopilotSdkProvider implements ChatProvider {
         console.error('[CopilotSdkProvider] Error stopping client:', err);
       });
       this._client = null;
+    }
+  }
+
+  async probeAuthState(): Promise<AuthProbeResult> {
+    try {
+      await this.client.listSessions();
+      return { authenticated: true };
+    } catch {
+      return { authenticated: false, reason: 'Copilot CLI is not authenticated. Please run copilot login.' };
     }
   }
 }

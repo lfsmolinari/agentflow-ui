@@ -56,6 +56,38 @@ The SDK's `CopilotClient` manages the Copilot CLI process lifecycle internally. 
 - **Spec reference:** US-4 (interface-only dependency)
 - **Trade-offs:** Two services hold a reference to the same provider instance. This is clean since the provider manages its own state internally.
 
+### Decision 6: OAuth-based authentication with token persistence
+
+- **Context:** The CLI-based `probeAuthState()` is unreliable and does not persist across app restarts. Every launch requires re-authentication via `copilot login`. The `@github/copilot-sdk` package supports OAuth-based authentication directly via `CopilotClientOptions.githubToken?: string`. OAuth tokens can be persisted by the app and loaded on startup.
+- **Options considered:**
+  - **(A)** Keep CLI probe + persist CLI session state (e.g., copy `~/.copilot` directory on logout)
+  - **(B)** Use SDK OAuth device flow, persist token via Electron `safeStorage` to `app.getPath('userData')/auth.json`, load on startup → init `CopilotClient` with `githubToken` option
+  - **(C)** Use `copilot auth status` CLI as auth check only, continue requiring `copilot login` for actual auth
+- **Chosen approach:** Option B — OAuth device flow for login, token persisted via `safeStorage` to encrypted storage. On startup: load token → init `CopilotClient` with `githubToken` option → probe via `listSessions()`. Must verify exact option name from `CopilotClientOptions` type in `node_modules/@github/copilot-sdk/dist/types.d.ts` (T11 is a research-only task for this).
+- **Evidence:** `CopilotClientOptions` has two auth-related fields:
+  - `githubToken?: string` — "GitHub token to use for authentication. When provided, the token is passed to the CLI server via environment variable. This takes priority over other authentication methods."
+  - `useLoggedInUser?: boolean` — "Whether to use the logged-in user for authentication. When true, the CLI server will attempt to use stored OAuth tokens or gh CLI auth. When false, only explicit tokens (githubToken or environment variables) are used. @default true (but defaults to false when githubToken is provided)."
+- **Spec reference:** US-5 (OAuth-based authentication)
+- **Trade-offs:**
+  - Eliminates CLI dependency for login flow (only SDK + OAuth device code needed)
+  - Logout requires clearing stored token and stopping the client
+  - If the SDK does not support OAuth device flow directly, fallback is to use GitHub's OAuth device flow API (`https://github.com/login/device/code`) and pass the resulting token via `githubToken` option
+  - Note: T11 must verify whether the SDK exposes a device flow helper or if the app must call the GitHub OAuth API directly
+
+### Decision 7: Session naming via sidecar extension
+
+- **Context:** Sessions in the sidebar currently show generic date/time labels (`new Date().toLocaleString()`). Users need to be able to name sessions for better identification. The sidecar file already stores `{ workspacePath, createdAt }` — it can be extended with `name?: string`.
+- **Options considered:**
+  - **(A)** Store names in a separate registry file at `app.getPath('userData')/session-names.json`
+  - **(B)** Extend sidecar `SidecarData` to include `name?: string`
+  - **(C)** Use SDK's `SessionMetadata.summary` field (read-only, auto-generated)
+- **Chosen approach:** Option B — extend sidecar to include `name?: string`. New IPC channel `agentflow:rename-session` added. `SessionItem` component gets inline rename UI on title click (click → edit mode, press Enter → save via IPC, blur → cancel).
+- **Spec reference:** US-6 (session naming)
+- **Trade-offs:**
+  - Sidecar write/read path already exists; no new registry file needed
+  - If the sidecar is deleted, the custom name is lost (same trade-off as workspace association)
+  - Name is purely app-managed, not visible to SDK or CLI
+
 ## Impacted Areas
 
 | Area | Impact | Files / Modules Likely Affected |

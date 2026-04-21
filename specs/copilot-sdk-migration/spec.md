@@ -16,6 +16,10 @@ The current chat integration in `src/infrastructure/copilot/adapter.ts` drives C
 
 These are architectural constraints of the CLI process model — not patchable bugs. The chat feature is non-functional as a result.
 
+Additionally, the CLI-based authentication flow does not persist across app restarts. Users must re-authenticate via `copilot login` every time the app launches because:
+- `probeAuthState()` creates a new CLI subprocess that can fail even with valid credentials (e.g., SDK SQLite DB cleared by re-login)
+- There is no persistent auth state storage
+
 ## Users and Context
 
 - **Who** is affected: every user of AgentFlow UI who attempts to start a chat session or send a message. The UI shell (workspaces, sidebar, auth gate) is stable; only the chat integration layer is broken.
@@ -42,7 +46,7 @@ All IPC channels, renderer code, preload bindings, `Session` and `ChatMessage` t
 **So that** I can begin product discussions without waiting for a full response before anything appears.
 
 **Acceptance Criteria:**
-- **Given** the user clicks "New chat" for a workspace, **when** `startNewSession` completes, **then** a `Session` with a valid `id`, `workspacePath`, and `createdAt` is returned and the session appears in the sidebar.
+- **Given** the user clicks "New chat" for a workspace, **when** `startNewSession` completes, **then** a `Session` with a valid `id`, `workspacePath`, and `createdAt` is returned and the session appears in the sidebar with a user-editable name.
 - **Given** a session is active, **when** the user sends a message, **then** response text chunks are pushed via `onChatOutput` before the full response is complete.
 - **Given** a session is active, **when** the agent finishes responding, **then** `sendMessage` resolves and no further chunks arrive.
 - **Given** the SDK fails to create a session, **when** `startNewSession` throws, **then** an `{ error: string }` payload is returned to the renderer and no UI hang occurs.
@@ -56,7 +60,7 @@ All IPC channels, renderer code, preload bindings, `Session` and `ChatMessage` t
 **Acceptance Criteria:**
 - **Given** a workspace is selected, **when** `listSessions` is called, **then** only sessions associated with that workspace path are returned.
 - **Given** a workspace has no prior sessions, **when** `listSessions` is called, **then** an empty array is returned without an error.
-- **Given** sessions exist for the workspace, **when** the sidebar renders, **then** each session has a title and is sorted by creation time descending.
+- **Given** sessions exist for the workspace, **when** the sidebar renders, **then** each session has a user-editable name and is sorted by creation time descending.
 
 ### US-3: Continue a prior session
 
@@ -78,6 +82,29 @@ All IPC channels, renderer code, preload bindings, `Session` and `ChatMessage` t
 **Acceptance Criteria:**
 - **Given** a new class implements `ChatProvider`, **when** it is registered in `src/main/index.ts`, **then** the full chat flow functions without any changes to the renderer, `src/preload/`, `src/shared/ipc.ts`, or `Session`/`ChatMessage` types.
 - **Given** `ChatService` is constructed with any `ChatProvider` implementation, **when** the codebase is compiled, **then** TypeScript reports zero type errors for the service.
+
+### US-5: Authenticate once and stay signed in across app restarts
+
+**As a** user,
+**I want to** authenticate with GitHub OAuth once and remain signed in when I restart the app,
+**So that** I don't have to re-authenticate every time I launch AgentFlow.
+
+**Acceptance Criteria:**
+- **Given** the user completes OAuth device flow on first launch, **when** the app restarts, **then** the user is automatically signed in without seeing the login screen.
+- **Given** the user clicks "Sign out", **when** they restart the app, **then** they see the login screen again.
+- **Given** the stored OAuth token expires or is revoked, **when** the app starts, **then** the user sees the login screen with an error message indicating they need to re-authenticate.
+
+### US-6: Name and rename chat sessions
+
+**As a** user,
+**I want to** assign meaningful names to my chat sessions,
+**So that** I can quickly identify and resume the right conversation instead of parsing generic timestamps.
+
+**Acceptance Criteria:**
+- **Given** a session exists in the sidebar, **when** the user clicks the session title, **then** an inline text field appears for editing.
+- **Given** the inline editor is open, **when** the user presses Enter or clicks away, **then** the new name is saved and displayed.
+- **Given** a session has no custom name, **when** it is displayed in the sidebar, **then** a default timestamp-based name is shown.
+- **Given** the user renames a session, **when** they close and reopen the app, **then** the custom name persists.
 
 ## Scope
 

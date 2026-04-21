@@ -13,9 +13,9 @@ import { CopilotSdkProvider } from '@infra/copilot/sdk-provider';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 app.name = 'AgentFlow UI';
-const startupService = new StartupService();
-const workspaceService = new WorkspaceService();
 const chatProvider = new CopilotSdkProvider();
+const startupService = new StartupService(undefined, chatProvider);
+const workspaceService = new WorkspaceService();
 const sessionService = new SessionService(chatProvider);
 const chatService = new ChatService(chatProvider);
 
