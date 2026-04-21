@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Session, ChatMessage } from '@shared/workspace-types';
 import { ChatService } from '@main/chat-service';
-import type { CopilotCliAdapter } from '@infra/copilot/adapter';
+import type { ChatProvider } from '@infra/chat/provider';
 
 describe('ChatService', () => {
   let mockStartNewSession: ReturnType<typeof vi.fn>;
@@ -13,11 +13,14 @@ describe('ChatService', () => {
     mockStartNewSession = vi.fn();
     mockOpenSession = vi.fn();
     mockSendMessage = vi.fn();
-    const mockAdapter = {
+    const mockAdapter: ChatProvider = {
+      listSessions: vi.fn(),
       startNewSession: mockStartNewSession,
       openSession: mockOpenSession,
       sendMessage: mockSendMessage,
-    } as unknown as CopilotCliAdapter;
+      closeSession: vi.fn(),
+      closeAll: vi.fn(),
+    };
     service = new ChatService(mockAdapter);
   });
 

@@ -355,9 +355,6 @@ export class CopilotCliAdapter {
     let startupIdleTimer: ReturnType<typeof setTimeout> | undefined;
 
     const onData = (chunk: string): void => {
-      // [DIAGNOSTIC] TODO: remove before merge
-      console.log('[COPILOT_RAW] chunk:', JSON.stringify(chunk), 'startupDone:', startupDone, 'hasResponseState:', entry.responseState !== null);
-
       // Drain startup content first — startup takes priority over responseState.
       // Prevents lingering startup output from being misinterpreted as a response.
       if (!startupDone) {
@@ -504,9 +501,6 @@ export class CopilotCliAdapter {
       let lazyStartupBuffer = '';
 
       const lazyOnData = (chunk: string): void => {
-        // [DIAGNOSTIC] TODO: remove before merge
-        console.log('[COPILOT_LAZY_RAW] chunk:', JSON.stringify(chunk), 'startupDone:', lazyStartupDone, 'hasResponseState:', lazyEntry.responseState !== null);
-
         // Drain startup content first — startup takes priority over responseState.
         if (!lazyStartupDone) {
           lazyStartupBuffer += chunk;

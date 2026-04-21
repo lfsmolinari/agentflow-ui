@@ -53,7 +53,12 @@ function normalizePath(p: string): string {
 
 function sidecarPath(sessionId: string): string {
   const homeDir = process.env.COPILOT_HOME ?? path.join(os.homedir(), '.copilot');
-  return path.join(homeDir, 'session-state', sessionId, '.agentflow-meta.json');
+  const sessionsDir = path.join(homeDir, 'session-state');
+  const resolved = path.resolve(sessionsDir, sessionId, '.agentflow-meta.json');
+  if (!resolved.startsWith(sessionsDir + path.sep)) {
+    throw new Error(`Invalid session ID: path traversal detected`);
+  }
+  return resolved;
 }
 
 function findCopilotBinary(): string | undefined {
@@ -135,6 +140,7 @@ export class CopilotSdkProvider implements ChatProvider {
       try {
         const raw = await fs.readFile(sidecarPath(sessionId), 'utf-8');
         const sidecar = JSON.parse(raw) as SidecarData;
+        if (typeof sidecar.workspacePath !== 'string' || typeof sidecar.createdAt !== 'string') continue;
         if (normalizePath(sidecar.workspacePath) !== normalizedPath) continue;
         const meta = sdkMeta.get(sessionId);
         results.push({
@@ -161,7 +167,7 @@ export class CopilotSdkProvider implements ChatProvider {
       model: 'gpt-4.1',
       systemMessage: {
         mode: 'replace',
-        content: `Working directory: ${workspacePath}\n\n${STRATEGIST_PROMPT}`,
+        content: `Working directory: ${workspacePath.replace(/[\r\n\u0085\u2028\u2029]/g, ' ')}\n\n${STRATEGIST_PROMPT}`,
       },
       onPermissionRequest: approveAll,
     });
@@ -198,9 +204,9 @@ export class CopilotSdkProvider implements ChatProvider {
       const messages: ChatMessage[] = [];
       for (const event of events) {
         if (event.type === 'user.message') {
-          messages.push({ role: 'user', content: (event as unknown as { type: string; data: { content: string } }).data.content });
+          messages.push({ role: 'user', content: event.data.content });
         } else if (event.type === 'assistant.message') {
-          messages.push({ role: 'assistant', content: (event as unknown as { type: string; data: { content: string } }).data.content });
+          messages.push({ role: 'assistant', content: event.data.content });
         }
       }
       return messages;

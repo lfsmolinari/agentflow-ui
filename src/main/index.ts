@@ -97,21 +97,14 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle(IPC_CHANNELS.startNewSession, async (_event, workspacePath: unknown) => {
-    console.log('[IPC] startNewSession called with:', workspacePath);
     if (typeof workspacePath !== 'string' || workspacePath.trim() === '') {
-      const result = { error: 'Invalid workspacePath' };
-      console.log('[IPC] startNewSession result:', JSON.stringify(result));
-      return result;
+      return { error: 'Invalid workspacePath' };
     }
     try {
       const session = await chatService.startNewSession(workspacePath);
-      const result = { session };
-      console.log('[IPC] startNewSession result:', JSON.stringify(result));
-      return result;
+      return { session };
     } catch (err) {
-      const result = { error: (err as Error).message };
-      console.log('[IPC] startNewSession result:', JSON.stringify(result));
-      return result;
+      return { error: (err as Error).message };
     }
   });
 
@@ -123,9 +116,10 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle(IPC_CHANNELS.sendMessage, async (event, sessionId: unknown, text: unknown) => {
+    if (typeof sessionId !== 'string' || !/^[\w-]+$/.test(sessionId)) return { error: 'Invalid sessionId' };
     console.log('[IPC] sendMessage called with sessionId:', sessionId);
-    if (typeof sessionId !== 'string' || sessionId.trim() === '') return { error: 'Invalid sessionId' };
     if (typeof text !== 'string' || text.trim() === '') return { error: 'Invalid text' };
+    if (text.length > 64_000) return { error: 'Message too long' };
     try {
       await chatService.sendMessage(sessionId, text as string, (chunk) => {
         try {
@@ -144,7 +138,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle(IPC_CHANNELS.closeSession, (_event, sessionId: unknown) => {
-    if (typeof sessionId !== 'string' || sessionId.trim() === '') return;
+    if (typeof sessionId !== 'string' || !/^[\w-]+$/.test(sessionId)) return;
     chatService.closeSession(sessionId);
   });
 

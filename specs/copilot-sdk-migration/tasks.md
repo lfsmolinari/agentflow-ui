@@ -354,6 +354,35 @@ Key steps:
 
 ---
 
+### T15: Post-review polish — test cleanup, coverage gaps, security advisories [P]
+
+- **Plan reference**: PR review findings (PR #2 re-review pass)
+- **Dependencies**: T07, T08
+- **Parallel**: Yes
+- **Files affected**:
+  - `tests/integration/session-ipc.test.ts` (delete — stale duplicate)
+  - `tests/infrastructure/copilot/sdk-provider.test.ts` (add sort-order test)
+  - `src/infrastructure/copilot/sdk-provider.ts` (broaden workspacePath sanitization)
+  - `src/main/index.ts` (remove workspacePath from log, add message length cap)
+
+**Description**: Addresses all open findings from the PR #2 re-review (PR Reviewer, QA, Security):
+
+1. Delete `tests/integration/session-ipc.test.ts` — stale `as unknown as CopilotCliAdapter` cast; file is a duplicate of `tests/main/session-service.test.ts`
+2. Add `listSessions` sort-order test to `sdk-provider.test.ts` — verifies sessions are returned newest-first by `createdAt`
+3. Broaden `workspacePath` sanitization in `sdk-provider.ts` `startNewSession` to strip Unicode line terminators (`\u0085`, `\u2028`, `\u2029`) in addition to `\r\n`
+4. Remove `workspacePath` from `console.log` in `startNewSession` IPC handler to prevent path leakage in logs
+5. Add `text.length > 64_000` guard in `sendMessage` IPC handler before forwarding to LLM
+
+**Acceptance**:
+- `tests/integration/session-ipc.test.ts` does not exist
+- `sdk-provider.test.ts` contains a test asserting sort order descending by `createdAt`
+- `workspacePath.replace(/[\r\n\u0085\u2028\u2029]/g, ' ')` in `startNewSession`
+- `startNewSession` IPC handler does not log `workspacePath`
+- `sendMessage` IPC handler returns `{ error: 'Message too long' }` for text > 64 000 chars
+- `npm run typecheck`, `npm run lint`, `npm test` all pass
+
+---
+
 ## Progress Tracking
 
 | Task | Status | Notes |
@@ -372,6 +401,7 @@ Key steps:
 | T12 | ⬜ Not started | Depends on T11; implements OAuth auth with token persistence |
 | T13 | ⬜ Not started | Depends on T10; implements session naming |
 | T14 | ⬜ Not started | Depends on T10; fixes empty chat message bubbles |
+| T15 | ✅ Complete | Post-review polish: stale test deleted, sort-order test added, security advisories resolved |
 
 Status legend: ⬜ Not started · 🔄 In progress · ✅ Complete · ⏸️ Blocked
 

@@ -104,6 +104,12 @@ describe('CopilotSdkProvider', () => {
 
       await expect(provider.startNewSession('/my/workspace')).resolves.toBeDefined();
     });
+
+    it('propagates error when createSession throws', async () => {
+      const client = getMockClient();
+      client.createSession.mockRejectedValueOnce(new Error('SDK unavailable'));
+      await expect(provider.startNewSession('/ws')).rejects.toThrow('SDK unavailable');
+    });
   });
 
   // ── listSessions ─────────────────────────────────────────────────────────
@@ -153,6 +159,34 @@ describe('CopilotSdkProvider', () => {
       const sessions = await provider.listSessions('/my/workspace');
       expect(sessions).toEqual([]);
     });
+
+    it('excludes session when sidecar file does not exist', async () => {
+      vi.mocked(nodeFs.readdir).mockResolvedValue([
+        { name: 'no-sidecar-session', isDirectory: () => true },
+      ] as unknown as Awaited<ReturnType<typeof nodeFs.readdir>>);
+      // readFile throws because sidecar was never written
+      vi.mocked(nodeFs.readFile).mockRejectedValue(new Error('ENOENT'));
+
+      const sessions = await provider.listSessions('/my/workspace');
+      expect(sessions).toEqual([]);
+    });
+
+    it('returns sessions sorted by createdAt descending (newest first)', async () => {
+      vi.mocked(nodeFs.readdir).mockResolvedValue([
+        { name: 'sess-older', isDirectory: () => true },
+        { name: 'sess-newer', isDirectory: () => true },
+      ] as unknown as Awaited<ReturnType<typeof nodeFs.readdir>>);
+
+      vi.mocked(nodeFs.readFile)
+        .mockResolvedValueOnce(JSON.stringify({ workspacePath: '/ws', createdAt: '2026-01-01T00:00:00.000Z' }))
+        .mockResolvedValueOnce(JSON.stringify({ workspacePath: '/ws', createdAt: '2026-01-02T00:00:00.000Z' }));
+
+      const sessions = await provider.listSessions('/ws');
+
+      expect(sessions).toHaveLength(2);
+      expect(sessions[0].id).toBe('sess-newer');
+      expect(sessions[1].id).toBe('sess-older');
+    });
   });
 
   // ── openSession ───────────────────────────────────────────────────────────
@@ -188,6 +222,27 @@ describe('CopilotSdkProvider', () => {
 
       const messages = await provider.openSession('missing-session');
       expect(messages).toEqual([]);
+    });
+
+    it('reads message content from event.data.content (not event.content)', async () => {
+      const client = getMockClient();
+      const resumedSession = {
+        sessionId: 'sess-content',
+        on: vi.fn(() => vi.fn()),
+        sendAndWait: vi.fn(),
+        getMessages: vi.fn().mockResolvedValue([
+          // data.content has value; top-level content is absent
+          { type: 'user.message', data: { content: 'correct content' } },
+          // confirm assistant message too
+          { type: 'assistant.message', data: { content: 'correct reply' } },
+        ]),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+      };
+      client.resumeSession.mockResolvedValue(resumedSession);
+
+      const messages = await provider.openSession('sess-content');
+      expect(messages[0].content).toBe('correct content');
+      expect(messages[1].content).toBe('correct reply');
     });
   });
 
